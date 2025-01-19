@@ -1,3 +1,4 @@
+
 #include "../exercise.h"
 
 // READ: 静态字段 <https://zh.cppreference.com/w/cpp/language/static>
@@ -10,7 +11,7 @@ struct A {
     A() {
         ++num_a;
     }
-    ~A() {
+    virtual ~A() {
         --num_a;
     }
 
@@ -33,6 +34,7 @@ struct B final : public A {
         return 'B';
     }
 };
+
 int A::num_a = 0;
 int B::num_b = 0;
 
@@ -55,7 +57,7 @@ int main(int argc, char **argv) {
     ASSERT(ab->name() == 'B', "Fill in the correct value for ab->name()");
 
     // TODO: 基类指针无法随意转换为派生类指针，补全正确的转换语句
-    B &bb =static_cast<B &>(*ab);
+    B &bb = static_cast<B &>(*ab);
     ASSERT(bb.name() == 'B', "Fill in the correct value for bb->name()");
 
     // TODO: ---- 以下代码不要修改，通过改正类定义解决编译问题 ----
