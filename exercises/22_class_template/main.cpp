@@ -1,5 +1,5 @@
 ﻿#include "../exercise.h"
-
+#include <cstring>
 // READ: 类模板 <https://zh.cppreference.com/w/cpp/language/class_template>
 
 template<class T>
@@ -10,6 +10,10 @@ struct Tensor4D {
     Tensor4D(unsigned int const shape_[4], T const *data_) {
         unsigned int size = 1;
         // TODO: 填入正确的 shape 并计算 size
+        for(int i = 0 ; i < 4; i++) {
+            size *= shape_[i];
+            shape[i] = shape_[i];
+        }
         data = new T[size];
         std::memcpy(data, data_, size * sizeof(T));
     }
@@ -27,6 +31,52 @@ struct Tensor4D {
     // 例如，`this` 形状为 `[1, 2, 3, 4]`，`others` 形状为 `[1, 2, 1, 4]`，
     // 则 `this` 与 `others` 相加时，3 个形状为 `[1, 2, 1, 4]` 的子张量各自与 `others` 对应项相加。
     Tensor4D &operator+=(Tensor4D const &others) {
+         // 检查形状是否符合广播规则
+        for (int i = 0; i < 4; ++i) {
+            if (shape[i] != others.shape[i] && others.shape[i] != 1) {
+                throw std::invalid_argument("Shapes are not compatible for broadcasting");
+            }
+        }
+
+        // 计算广播后的形状
+        unsigned int broadcast_shape[4];
+        for (int i = 0; i < 4; ++i) {
+            broadcast_shape[i] = (shape[i] == 1) ? others.shape[i] : shape[i];
+        }
+
+        // 计算广播后的总大小
+        unsigned int broadcast_size = 1;
+        for (int i = 0; i < 4; ++i) {
+            broadcast_size *= broadcast_shape[i];
+        }
+
+        // 临时数组用于存储广播后的 others 数据
+        T* broadcast_others_data = new T[broadcast_size];
+
+        // 填充广播后的 others 数据
+        for (unsigned int i = 0; i < broadcast_size; ++i) {
+            unsigned int idx[4] = {i / (broadcast_shape[1] * broadcast_shape[2] * broadcast_shape[3]),
+                                   (i / (broadcast_shape[2] * broadcast_shape[3])) % broadcast_shape[1],
+                                   (i / broadcast_shape[3]) % broadcast_shape[2],
+                                   i % broadcast_shape[3]};
+            unsigned int others_idx = 0;
+            for (int j = 0; j < 4; ++j) {
+                others_idx *= others.shape[j];
+                others_idx += (idx[j] < others.shape[j]) ? idx[j] : 0;
+            }
+            broadcast_others_data[i] = others.data[others_idx];
+        }
+
+        // 执行加法操作
+        int size = 1;
+        for(int i = 0; i < 4; i++) size *= shape[i];
+        for (unsigned int i = 0; i < size; ++i) {
+            data[i] += broadcast_others_data[i];
+        }
+
+        // 释放临时数组
+        delete[] broadcast_others_data;
+
         // TODO: 实现单向广播的加法
         return *this;
     }
